@@ -27,29 +27,37 @@ jobs:
     steps:
       - name: Check if fork PR
         id: fork-check
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
+          BASE_REPO: ${{ github.repository }}
         run: |
-          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
             echo "is-fork=true" >> $GITHUB_OUTPUT
-            echo "fork-owner=${{ github.event.pull_request.head.repo.owner.login }}" >> $GITHUB_OUTPUT
+            echo "fork-owner=$HEAD_OWNER" >> $GITHUB_OUTPUT
           else
             echo "is-fork=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Checkout code
+        if: steps.fork-check.outputs.is-fork != 'true'
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Node.js
+        if: steps.fork-check.outputs.is-fork != 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: 'npm'
 
       - name: Install dependencies
+        if: steps.fork-check.outputs.is-fork != 'true'
         run: npm ci
 
       - name: Build for preview
+        if: steps.fork-check.outputs.is-fork != 'true'
         id: build
         env:
           # Use staging/non-production backends for PR previews
@@ -63,6 +71,7 @@ jobs:
           echo "build-timestamp=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
       - name: Deploy to Vercel Preview
+        if: steps.fork-check.outputs.is-fork != 'true'
         id: vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
