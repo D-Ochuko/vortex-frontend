@@ -1,8 +1,8 @@
 name: Deploy PR Preview
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  # Single trigger so the job runs once per PR event. Fork PRs are never
+  # built or deployed (see the is-fork guards on the build/deploy steps).
   pull_request_target:
     types: [opened, reopened, synchronize]
 
